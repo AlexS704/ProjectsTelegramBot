@@ -1,2 +1,2 @@
-# SkillfactoryTelegrammBot
+# SkillfactoryTelegramBot
 Репозиторий содержит реализацию для телеграмм бота. Бот может принимать и обрабатывать запросы.
