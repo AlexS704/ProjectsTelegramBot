@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 
-namespace VoiceTexterBot
+namespace VoiceTexterBot //имя тестового бота VoiceATextBot
 {
     internal class Program
     {
@@ -29,7 +29,7 @@ namespace VoiceTexterBot
         {
             //Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>
-                (provider => new TelegramBotClient("BOT_TOKEN"));
+                (provider => new TelegramBotClient("7832162276:AAHD7O4hbxCkuNnMMHjxYKY7LzBXE9Yq_zo"));
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
         }

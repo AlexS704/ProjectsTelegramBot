@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
-using Telegram.Bots.Types;
+using Telegram.Bot.Types;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Types.Enums;
 
 
 namespace VoiceTexterBot
@@ -16,7 +17,7 @@ namespace VoiceTexterBot
             _telegramClient = telegramClient;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _telegramClient.StartReceiving(
                 HandleUpdateAsync,
@@ -25,31 +26,36 @@ namespace VoiceTexterBot
                 cancellationToken: stoppingToken);
 
             Console.WriteLine("Бот запущен");
+            return Task.CompletedTask;
         }
 
-        async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
+            CancellationToken cancellationToken)
         {
-        //Обрабатываем нажатия на кнопки из Telegram Bot API:https://core.telegram.org/bots/api#callbackquery
-            if (update.Type == UpdateType.CallbackQuery)
+            //Обрабатываем нажатия на кнопки из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
+            if (update.Type == UpdateType.CallbackQuery)            
             {
-                await
-                    _telegramClient.SendTextMessageAsync(update.Message.Chat.ID, "Вы нажали кнопку",
+                
+                await _telegramClient.SendMessage
+                    (chatId: update.Message.Chat.Id,
+                    text: "Вы нажали кнопку",
                     cancellationToken: cancellationToken);
                 return;
             }
-
-        //Обрабатываем входящие сообщения из Telegram Bot API:
-        https://core.telegram.org/bots/api#message
+            //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
             if (update.Type == UpdateType.Message)
             {
-                await
-                    _telegramClient.SendTextMessageAsync(update.Message.Chat.Id, "Вы отправили сообщение",
+                await _telegramClient.SendMessage
+                    (chatId: update.Message.Chat.Id,
+                    text: "Вы отправили сообщение: " + update.Message.Text,
                     cancellationToken: cancellationToken);
                 return;
-            }
+            } 
         }
+   
 
-        Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, 
+            CancellationToken cancellationToken)
         {
 
             // Задаем сообщение об ошибке в зависимости от того, какая именно ошибка произошла
