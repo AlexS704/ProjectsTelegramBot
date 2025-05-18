@@ -1,38 +1,29 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting; //библиотека для подключения постоянно активного сервиса 
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
-using VoiceTexterBot.Controllers;
 
 
 namespace VoiceTexterBot
 {
     internal class Bot : BackgroundService
     {
-        // Клиент к Telegram Bot API
+        /// <summary>
+        /// объект, отвечающий за отправку сообщений клиенту
+        /// </summary>
         private ITelegramBotClient _telegramClient;
 
-        // Контроллеры различных видов
-        private InlineKeyboardController _inlineKeyboardController;
-        private TextMessageController _textMessageController;
-        private VoiceMessageController _voiceMessageController;
-        private DefaultMessageController _defaultMessageController;
-
-        public Bot(ITelegramBotClient telegramClient,
-            InlineKeyboardController inlineKeyboardController,
-            TextMessageController textMessageController,
-            VoiceMessageController voiceMessageController,
-            DefaultMessageController defaultMessageController)
+        public Bot(ITelegramBotClient telegramClient)
         {
             _telegramClient = telegramClient;
-            _inlineKeyboardController = inlineKeyboardController;
-            _textMessageController = textMessageController;
-            _voiceMessageController = voiceMessageController;
-            _defaultMessageController = defaultMessageController;
         }
-
+        /// <summary>
+        /// Метод запуска бота
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _telegramClient.StartReceiving(
@@ -44,41 +35,58 @@ namespace VoiceTexterBot
             Console.WriteLine("Бот запущен");
             return Task.CompletedTask;
         }
-
+        /// <summary>
+        /// Метод обработки обновлений ботом
+        /// </summary>
+        /// <param name="botClient"></param>
+        /// <param name="update"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
             CancellationToken cancellationToken)
         {
             //Обрабатываем нажатия на кнопки из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
             if (update.Type == UpdateType.CallbackQuery)            
             {
-                await
-                    _inlineKeyboardController.Handle(update.CallbackQuery, cancellationToken);
-                return;                
-            }
 
+                await _telegramClient.SendMessage
+                    (update.CallbackQuery.From.Id,
+                    $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.",
+                    cancellationToken: cancellationToken);
+                return;
+            }
             //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
             if (update.Type == UpdateType.Message)
             {
-               switch (update.Message!.Type)
+                switch (update.Message!.Type)
                 {
-                    case MessageType.Voice:
-                        await
-                            _voiceMessageController.Handle(update.Message, cancellationToken);
+                    case MessageType.Text:
+                    Console.WriteLine($"Получено сообщение: {update.Message.Text}\n" +
+                        $"Длина: {update.Message.Text.Length} знаков");
+                        await 
+                    _telegramClient.SendMessage
+                    (update.Message.From.Id,
+                    text: $"Длина сообщения: {update.Message.Text.Length} знаков",
+                    cancellationToken: cancellationToken);
                         return;
 
-                    case MessageType.Text:
-                        await
-                            _textMessageController.Handle(update.Message, cancellationToken);
-                        return;
- 
                     default:
-                        await
-                            _defaultMessageController.Handle(update.Message, cancellationToken);
+                        await _telegramClient.SendMessage
+                    (update.Message.From.Id,
+                    $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.",
+                    cancellationToken: cancellationToken);
                         return;
-                }
+                }                        
+                  
             } 
         }   
-
+        /// <summary>
+        /// Метод обработки ошибок
+        /// </summary>
+        /// <param name="botClient"></param>
+        /// <param name="exception"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, 
             CancellationToken cancellationToken)
         {
@@ -89,7 +97,7 @@ namespace VoiceTexterBot
                 ApiRequestException apiRequestException => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
                 _ => exception.ToString()
             };
-
+                       
             //Выводим в консоль информацию об ошибке
             Console.WriteLine(errorMessage);
 
