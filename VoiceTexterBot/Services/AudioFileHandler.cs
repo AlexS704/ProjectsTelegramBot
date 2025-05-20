@@ -29,9 +29,9 @@ namespace VoiceTexterBot.Services
                 if (file.FilePath == null)
                     return;
 
-                //Скачиваеи файл
+                //Скачивание файла
                 await
-                    _telegramBotClient.DownloadFileAsync(file.FilePath,
+                    _telegramBotClient.DownloadFile(file.FilePath,
                     destinationStream, ct);
             }
 
