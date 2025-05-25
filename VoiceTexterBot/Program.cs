@@ -60,7 +60,7 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
                 {                   
                     DownloadsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                     "Downloads"), //динамическое определение пути
-                    BotToken = "7832162276:AAHuu67xJhtXkEVTKPtiPnB4OU-xV-xr8Ys",
+                    BotToken = "7832162276:AAEWlEFv0Uh5y6aBbTWTbp2ccdQl1Ki53Yk",
                     AudioFileName = "audio",
                     InputAudioFormat = "ogg",
                 };
