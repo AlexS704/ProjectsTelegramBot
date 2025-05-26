@@ -1,15 +1,12 @@
-﻿using System;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DotNetEnv;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text;
 using Telegram.Bot;
 using VoiceTexterBot.Configuration;
 using VoiceTexterBot.Controllers;
 using VoiceTexterBot.Services;
-using DotNetEnv;
-using Telegram.Bots.Http;
 
 namespace VoiceTexterBot //имя тестового бота VoiceATextBot
 {
