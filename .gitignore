@@ -2,6 +2,7 @@
 .env
 **/.env
 *.env.local
+TelegramBotToken.env
 appsettings*.json
 
 ### Артефакты сборки ###
