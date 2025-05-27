@@ -1,5 +1,8 @@
 ﻿using VoiceTexterBot.Configuration;
 using Telegram.Bot;
+using VoiceTexterBot.Utilites;
+using System.IO;
+using System.Threading;
 
 
 namespace VoiceTexterBot.Services
@@ -21,30 +24,45 @@ namespace VoiceTexterBot.Services
             string inputAudioFilePath = Path.Combine(_appSettings.DownloadsFolder,
                 $"{_appSettings.AudioFileName}.{_appSettings.InputAudioFormat}");
 
-            using (FileStream destinationStream = File.Create(inputAudioFilePath))
+            if (!Directory.Exists(_appSettings.DownloadsFolder))
+                Directory.CreateDirectory(_appSettings.DownloadsFolder);
+
+            try
             {
-                //Загружаем информацию о файле
-                var file = await
-                    _telegramBotClient.GetFile(fileId, ct);
-                if (file.FilePath == null)
-                    return;
+                using (FileStream destinationStream = File.Create(inputAudioFilePath))
+                {
+                    //Загружаем информацию о файле
+                    var file = await
+                        _telegramBotClient.GetFile(fileId, ct);
+                    if (file.FilePath == null)
+                        return;
 
-                //Скачивание файла
-                await
-                    _telegramBotClient.DownloadFile(file.FilePath,
-                    destinationStream, ct);
+                    //Скачивание файла
+                    await
+                        _telegramBotClient.DownloadFile(file.FilePath,
+                        destinationStream, ct);
+                }
             }
-
-            //using (FileStream destinationStream = File.Create(inputAudioFilePath))
-            //{
-            //    await _telegramBotClient.DownloadFile(fileId, destinationStream, ct);
-            //}
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Download error: {ex.Message}");
+                throw;
+            }     
         }
 
-        public string Process(string languageCode)
+        public string Process(string inputParam)
         {
-            //Метод пока не реализован
-            throw new NotImplementedException();
+            string inputAudioPath = Path.Combine(_appSettings.DownloadsFolder,
+                $"{_appSettings.AudioFileName}.{_appSettings.InputAudioFormat}");
+            string outputAudioPath = Path.Combine(_appSettings.DownloadsFolder,
+                $"{_appSettings.AudioFileName}.{_appSettings.OutputAudioFormat}");
+
+            Console.WriteLine("Начинаем конвертацию...");AudioConverter
+                .TryConvert(inputAudioPath, outputAudioPath);
+            Console.WriteLine("Файл конвертирован");
+
+            return "Конвертация успешно завершена";
+           
 
 
         }

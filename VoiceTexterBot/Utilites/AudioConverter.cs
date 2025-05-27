@@ -1,4 +1,5 @@
 ﻿using FFMpegCore;
+using VoiceTexterBot.Extensions;
 
 namespace VoiceTexterBot.Utilites
 {
@@ -12,8 +13,11 @@ namespace VoiceTexterBot.Utilites
 
             //вызываем Ffmpeg, передав требуемые аргументы
 
-            FFMpegArguments.FromFileInput(inputFile).OutputToFile(outputFile, true,
-                options => { options.WithFastStart()).ProcessSynchronously();
+            FFMpegArguments
+                .FromFileInput(inputFile)
+                .OutputToFile(outputFile, true, options => options
+                .WithFastStart())
+                .ProcessSynchronously();
 
 
         }
