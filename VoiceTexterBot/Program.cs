@@ -53,6 +53,11 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
             //Запускаем сервис
             await host.RunAsync();
             Console.WriteLine("Сервис остановлен");
+
+
+            //!!!var downLoadFolder = new AppSettings();
+
+            var audioFileHandler = new AudioFileHandler(ITelegramBotClient.DownloadFile, AppSettings.DownloadsFolder);
         }
         static void ConfigureServices(IServiceCollection services)
         {
@@ -91,5 +96,6 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
                 };
             }
         }
+
     }
 }
