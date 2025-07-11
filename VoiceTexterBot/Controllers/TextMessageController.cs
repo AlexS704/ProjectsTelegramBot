@@ -25,7 +25,9 @@ namespace VoiceTexterBot.Controllers
                     buttons.Add(new[]
                     {
                         InlineKeyboardButton.WithCallbackData($"Русский", $"ru"),
-                        InlineKeyboardButton.WithCallbackData($"English", $"en")
+                        InlineKeyboardButton.WithCallbackData($"English", $"en"),
+                        InlineKeyboardButton.WithCallbackData($"Français", $"fr"),
+                        InlineKeyboardButton.WithCallbackData($"中国人", $"cn")
                     });
 
                     //передаем кнопки вместе с сообщением (параметр ReplyMarkup)

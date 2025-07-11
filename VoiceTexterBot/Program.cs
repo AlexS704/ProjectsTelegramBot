@@ -11,17 +11,15 @@ using VoiceTexterBot.Services;
 namespace VoiceTexterBot //имя тестового бота VoiceATextBot
 {
     internal class Program
-    {
-        
+    {        
         public static async Task Main()
-        {
-                        
+        {                        
             //Загрузка .env из корня проекта
             string envPath = Path.Combine(Directory.GetCurrentDirectory(), "TelegramBotToken.env");
 
-            // Диагностика (можно удалить после проверки)
-            //Console.WriteLine($"Ищем .env по пути: {envPath}");
-            //Console.WriteLine($"Файл существует: {File.Exists(envPath)}");
+            // Диагностика
+            Console.WriteLine($"Ищем .env по пути: {envPath}");
+            Console.WriteLine($"Файл существует: {File.Exists(envPath)}");
 
             if (!File.Exists(envPath))
             {
@@ -54,10 +52,9 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
             await host.RunAsync();
             Console.WriteLine("Сервис остановлен");
 
+            var downLoadFolder = new AppSettings();
 
-            //!!!var downLoadFolder = new AppSettings();
-
-            var audioFileHandler = new AudioFileHandler(ITelegramBotClient.DownloadFile, AppSettings.DownloadsFolder);
+            //var audioFileHandler = new AudioFileHandler(ITelegramBotClient.DownloadFile, AppSettings.DownloadsFolder);
         }
         static void ConfigureServices(IServiceCollection services)
         {
@@ -76,7 +73,6 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
             
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
-
             //Подключаем хранилище данных в памяти
             services.AddSingleton<IStorage, MemoryStorage>();
             //Подключаем обработчик аудио файлов
@@ -93,9 +89,10 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
                     throw new InvalidOperationException("TELEGRAM_BOT_TOKEN не найден в TelegramBotToken.env"),
                     AudioFileName = "audio",
                     InputAudioFormat = "ogg",
+                    OutputAudioFormat = "wav",
+                    InputAudioBitrate = 96000,
                 };
             }
         }
-
     }
 }

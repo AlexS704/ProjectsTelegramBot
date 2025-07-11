@@ -2,17 +2,26 @@
 {
     public static class DirectoryExtension
     {
-       /// <summary>
-       /// Получаем путь до каталога с .sln файлом
-       /// </summary>
-       /// <returns></returns>
+        /// <summary>
+        /// Получаем путь до каталога с .sln файлом
+        /// </summary>
+        /// <returns></returns>    
+
         public static string GetSolutionRoot()
         {
-            var dir =
-                Path.GetDirectoryName(Directory.GetCurrentDirectory());
-            var fullname = Directory.GetParent(dir).FullName;
-            var projectRoot = fullname.Substring(0, fullname.Length - 4);
-            return Directory.GetParent(projectRoot)?.FullName;
+            var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (directory != null && !directory.GetFiles("*.sln").Any())
+            {
+                directory = directory.Parent;
+            }
+
+            if (directory == null || !directory.GetFiles("*.sln").Any())
+            {
+                throw new DirectoryNotFoundException(
+                    $"Решение (.sln) не найдено! Поиск начинался с: {Directory.GetCurrentDirectory()}"
+                );
+            }
+            return directory?.FullName;
         }
     }
 }

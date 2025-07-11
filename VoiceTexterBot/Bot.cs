@@ -32,7 +32,11 @@ namespace VoiceTexterBot
             _voiceMessageController = voiceMessageController;
             _defaultMessageController = defaultMessageController;
         }
-
+        /// <summary>
+        /// Запускает бота в постоянно активном режиме
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _telegramClient.StartReceiving(
@@ -44,7 +48,13 @@ namespace VoiceTexterBot
             Console.WriteLine("Бот запущен");
             return Task.CompletedTask;
         }
-
+        /// <summary>
+        /// Метод(асинхронный) обработки обычных событий
+        /// </summary>
+        /// <param name="botClient">интерфес для работы с Bot Api</param>
+        /// <param name="update">идентификатор обновления</param>
+        /// <param name="cancellationToken">отменяет зависшую или долгую операцию</param>
+        /// <returns></returns>
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
             CancellationToken cancellationToken)
         {
@@ -77,8 +87,15 @@ namespace VoiceTexterBot
                         return;
                 }
             } 
-        }   
+        }
 
+        /// <summary>
+        /// Метод(асинхронный) обработки ошибок
+        /// </summary>
+        /// <param name="botClient">интерфес для работы с Bot Api</param>
+        /// <param name="exception">исключение</param>
+        /// <param name="cancellationToken">отменяет зависшую или долгую операцию</param>
+        /// <returns></returns>
         Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, 
             CancellationToken cancellationToken)
         {

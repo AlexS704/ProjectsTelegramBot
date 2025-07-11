@@ -5,9 +5,9 @@ namespace VoiceTexterBot.Services
     public interface IStorage
     {
         /// <summary>
-        /// Получение сессия пользователя по идентификатору
+        /// Получение сессии пользователя по идентификатору
         /// </summary>
-        /// <param name="chatId"></param>
+        /// <param name="chatId">уникальный идентификатор</param>
         /// <returns></returns>
         Session GetSession(long chatId);
     }
