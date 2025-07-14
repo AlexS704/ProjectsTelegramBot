@@ -71,11 +71,11 @@ namespace BotCounter
                 {
                     case MessageType.Text:
                     Console.WriteLine($"Получено сообщение: {update.Message.Text}\n" +
-                        $"Длина: {update.Message.Text.Length} знаков");
+                        $"Длина Вашего сообщения: {update.Message.Text.Length} знаков");
                         await 
                     _telegramClient.SendMessage
                     (update.Message.From.Id,
-                    text: $"Длина сообщения: {update.Message.Text.Length} знаков",
+                    text: $"Длина Вашего сообщения: {update.Message.Text.Length} знаков",
                     cancellationToken: cancellationToken);
                         return;
 
