@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 
-namespace VoiceTexterBot //имя тестового бота VoiceATextBot
+namespace BotCounter
 {
     internal class Program
     {
