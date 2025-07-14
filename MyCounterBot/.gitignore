@@ -1,0 +1,15 @@
+### Общие секреты ###
+.env
+**/.env
+*.env.local
+TelegramBotToken.env
+appsettings*.json
+
+### Артефакты сборки ###
+**/bin/
+**/obj/
+**/.vs/
+
+### Логи и кэши ###
+*.log
+**/.DS_Store

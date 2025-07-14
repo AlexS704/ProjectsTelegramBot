@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
+using DotNetEnv;
 
 namespace BotCounter
 {
@@ -34,7 +35,7 @@ namespace BotCounter
         {
             //Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>
-                (provider => new TelegramBotClient("7522450219:AAEdZMalwLrcWm3ei9SsQasEHuGBA96ywTc"));
+                (provider => new TelegramBotClient("TelegramBotToken"));
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
         }
