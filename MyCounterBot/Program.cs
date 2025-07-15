@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 
-namespace VoiceTexterBot //имя тестового бота VoiceATextBot
+namespace CharacterCounterBot
 {
     internal class Program
     {
@@ -25,6 +25,7 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
             await host.RunAsync();
             Console.WriteLine("Сервис остановлен");
         }
+
         /// <summary>
         /// Метод запуска постоянно активного сервиса
         /// и регистрация бота
@@ -34,7 +35,8 @@ namespace VoiceTexterBot //имя тестового бота VoiceATextBot
         {
             //Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>
-                (provider => new TelegramBotClient("7522450219:AAEdZMalwLrcWm3ei9SsQasEHuGBA96ywTc"));
+                (provider => new TelegramBotClient("7522450219:AAEdZMalwLrcWm3ei9SsQasEHuGBA96ywTc"));//необходимо решить проблемы безопасности
+            
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
         }
