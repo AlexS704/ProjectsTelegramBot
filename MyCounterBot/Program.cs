@@ -6,7 +6,11 @@ using Telegram.Bot;
 using DotNetEnv;
 using MyCounterBot.Configuration;
 
+<<<<<<< HEAD
 namespace BotCounter
+=======
+namespace CharacterCounterBot
+>>>>>>> origin/counter-bot-dev
 {
     internal class Program
     {
@@ -52,6 +56,7 @@ namespace BotCounter
 
             var downLoadFolder = new AppSettings();
         }
+
         /// <summary>
         /// Метод запуска постоянно активного сервиса
         /// и регистрация бота
@@ -64,7 +69,12 @@ namespace BotCounter
             
             //Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>
+<<<<<<< HEAD
                 (provider => new TelegramBotClient(appSettings.BotToken));
+=======
+                (provider => new TelegramBotClient("7522450219:AAEdZMalwLrcWm3ei9SsQasEHuGBA96ywTc"));//необходимо решить проблемы безопасности
+            
+>>>>>>> origin/counter-bot-dev
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
             //Подключаем хранилище данных в памяти

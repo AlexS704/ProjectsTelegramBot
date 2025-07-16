@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting; //библиотека для подключения постоянно активного сервиса 
+﻿
+using Microsoft.Extensions.Hosting; 
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Exceptions;
@@ -64,6 +65,7 @@ namespace BotCounter
                     cancellationToken: cancellationToken);
                 return;
             }
+
             //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
             if (update.Type == UpdateType.Message)
             {
@@ -88,8 +90,8 @@ namespace BotCounter
                 }                        
                   
             } 
-        }   
-
+        } 
+        
         /// <summary>
         /// Метод обработки ошибок
         /// </summary>
