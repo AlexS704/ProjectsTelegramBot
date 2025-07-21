@@ -5,6 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using CounterBot.Controllers;
 
 //Требования к боту:
 //1. Бот должен иметь две функции: подсчёт количества символов в тексте и вычисление суммы чисел,
@@ -23,17 +24,29 @@ namespace BotCounter
         /// объект, отвечающий за отправку сообщений клиенту
         /// </summary>
         private ITelegramBotClient _telegramClient;
-        public Bot(ITelegramBotClient telegramClient)
+
+        //Контроллеры различных видов сообщений
+        private InlineKeyboardController _inlineKeyboardController;
+        private TextMessageController _textMessageController;
+        private DefaultMessageController _defaultMessageController;
+
+        public Bot(ITelegramBotClient telegramClient,
+            InlineKeyboardController inlineKeyboardController,
+            TextMessageController textMessageController,
+            DefaultMessageController defaultMessageController)
         {
             _telegramClient = telegramClient;
-        }
+            _inlineKeyboardController = inlineKeyboardController;
+            _textMessageController = textMessageController;
+            _defaultMessageController = defaultMessageController;
+        }     
 
         /// <summary>
-        /// Метод запуска бота
+        /// Метод активации бота и запуск в постоянно активном режиме
         /// </summary>
         /// <param name="stoppingToken"></param>
         /// <returns></returns>
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _telegramClient.StartReceiving(
                 HandleUpdateAsync,
@@ -42,7 +55,7 @@ namespace BotCounter
                 cancellationToken: stoppingToken);
 
             Console.WriteLine("Бот запущен");
-            return Task.CompletedTask;
+            //return Task.CompletedTask;
         }
 
         /// <summary>
@@ -58,37 +71,24 @@ namespace BotCounter
             //Обрабатываем нажатия на кнопки из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
             if (update.Type == UpdateType.CallbackQuery)            
             {
-
-                await _telegramClient.SendMessage
-                    (update.CallbackQuery.From.Id,
-                    $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.",
-                    cancellationToken: cancellationToken);
+                await _inlineKeyboardController.Handle(update.CallbackQuery,
+                    cancellationToken);
                 return;
             }
 
-            //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
-            if (update.Type == UpdateType.Message)
+            //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message            
+            if (update.Type == UpdateType.Message && update.Message.Text != "/start")
             {
                 switch (update.Message!.Type)
                 {
                     case MessageType.Text:
-                    Console.WriteLine($"Получено сообщение: {update.Message.Text}\n" +
-                        $"Длина Вашего сообщения: {update.Message.Text.Length} знаков");
-                        await 
-                    _telegramClient.SendMessage
-                    (update.Message.From.Id,
-                    text: $"Длина Вашего сообщения: {update.Message.Text.Length} знаков",
-                    cancellationToken: cancellationToken);
+                        await _textMessageController.Handle(update.Message, cancellationToken);                   
                         return;
 
                     default:
-                        await _telegramClient.SendMessage
-                    (update.Message.From.Id,
-                    $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.",
-                    cancellationToken: cancellationToken);
+                        await _defaultMessageController.Handle(update.Message, cancellationToken);                    
                         return;
-                }                        
-                  
+                }            
             } 
         } 
         
@@ -102,7 +102,6 @@ namespace BotCounter
         Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, 
             CancellationToken cancellationToken)
         {
-
             // Задаем сообщение об ошибке в зависимости от того, какая именно ошибка произошла
             var errorMessage = exception switch
             {

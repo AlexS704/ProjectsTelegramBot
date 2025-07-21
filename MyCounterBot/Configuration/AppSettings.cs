@@ -1,4 +1,4 @@
-﻿namespace MyCounterBot.Configuration
+﻿namespace CounterBot.Configuration
 {
     public  class AppSettings
     {

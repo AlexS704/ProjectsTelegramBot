@@ -4,13 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 using DotNetEnv;
-using MyCounterBot.Configuration;
+using CounterBot.Configuration;
+using CounterBot.Controllers;
 
-<<<<<<< HEAD
 namespace BotCounter
-=======
-namespace CharacterCounterBot
->>>>>>> origin/counter-bot-dev
 {
     internal class Program
     {
@@ -64,19 +61,21 @@ namespace CharacterCounterBot
         /// <param name="services"></param>
         static void ConfigureServices(IServiceCollection services)
         {
+            //Подключаем контроллеры сообщений и кнопок
+            services.AddTransient<DefaultMessageController>();
+            services.AddTransient<TextMessageController>();
+            services.AddTransient<InlineKeyboardController>();
+            
             AppSettings appSettings = BuildAppSettings();
             services.AddSingleton(appSettings);
             
             //Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>
-<<<<<<< HEAD
-                (provider => new TelegramBotClient(appSettings.BotToken));
-=======
-                (provider => new TelegramBotClient("7522450219:AAEdZMalwLrcWm3ei9SsQasEHuGBA96ywTc"));//необходимо решить проблемы безопасности
-            
->>>>>>> origin/counter-bot-dev
+                (provider => new TelegramBotClient(appSettings.BotToken));            
+
             //Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
+
             //Подключаем хранилище данных в памяти
             //_______
 
