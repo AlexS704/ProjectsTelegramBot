@@ -1,6 +1,9 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using System.Globalization;
+using CounterBot.Models;
+using CounterBot.Services;
+using Microsoft.Extensions.Logging;
 
 
 namespace CounterBot.Controllers
@@ -8,10 +11,18 @@ namespace CounterBot.Controllers
     public class TextMessageController
     {
         private readonly ITelegramBotClient _telegramClient;
+        private readonly IUserStateService _stateService;
+        private readonly ILogger<TextMessageController> _logger;
 
-        public TextMessageController(ITelegramBotClient telegramBotClient)
+        public TextMessageController(
+            ITelegramBotClient telegramBotClient,
+            IUserStateService stateService,
+            ILogger<TextMessageController> logger
+            )
         {
             _telegramClient = telegramBotClient;
+            _logger = logger;
+            _stateService = stateService;
         }
 
         /// <summary>
@@ -24,16 +35,24 @@ namespace CounterBot.Controllers
         {
             //проверяем, что сообщение содержит текст
             if (message.Text is not { } text)
-                return; // выходим, если нет текста
-
+                return; // выходим, если нет текста          
+                    
             try
             {
-                string response = ProcessMessage(text);
+                var mode = _stateService.GetMode(message.Chat.Id);
+                string response = mode switch
+                {
+                    BotMode.CountChars => $"📝Символов: {text.Length}",
+                    BotMode.SumNumbers => TryCalculateSum(text) is double sum
+                    ? $"🔢 Сумма: {sum}"
+                    : "❌ Отправьте только числа через пробел!",
+                    _ => "Выберите режим в /start"
+                };
+
                 await _telegramClient.SendMessage(
                     chatId: message.Chat.Id,
                     text: response,
-                    cancellationToken: ct
-                );
+                    cancellationToken: ct);               
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -42,81 +61,40 @@ namespace CounterBot.Controllers
         }
 
         /// <summary>
-        /// Метод обработки сообщения по его типу
-        /// </summary>
-        /// <param name="input">тип сообщения</param>
-        /// <returns></returns>
-        private string ProcessMessage(string input)
-        {
-            //если числа
-            if (IsNumberSequence(input))
-            {
-                double sum = CalculateSum(input);
-                return $"Сумма чисел: {sum.ToString(CultureInfo.InvariantCulture)}";
-            }
-            //если текст
-            return $"Количество символов: {input.Length}";
-        }
-        
-        /// <summary>
-        /// Проверка строку на одни числа
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private bool IsNumberSequence(string input)
-        {
-            var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return parts.All(IsValidNumber);
-        }
-
-        /// <summary>
-        /// Проверка на валидность числа
-        /// </summary>
-        /// <param name="part"></param>
-        /// <returns></returns>
-        private bool IsValidNumber(string part)
-        {
-            return double.TryParse(
-                part,
-                NumberStyles.Any,
-                CultureInfo.InvariantCulture,
-                out _
-                );
-        }
-
-        /// <summary>
         /// Метод сложения чисел из сообщения
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double CalculateSum(string input)
+        private double? TryCalculateSum(string input)
         {
-            return input.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(part => double.Parse(
-                    part,
-                    NumberStyles.Any,
-                    CultureInfo.InvariantCulture
-                    ))
-                .Sum();
-        }
-
-        private async Task SendResponse(
-            long chatId, 
-            string text, 
-            CancellationToken ct)
-        {
-            Console.WriteLine($"Отправка в чат {chatId}: {text}");
-            await Task.Delay(100, ct);//заглушка для имитации асинхронной отправки
+            try
+            {
+                return input.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => double.Parse(part, NumberStyles.Any, CultureInfo.InvariantCulture))
+                    .Sum();
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
         }
 
         private async Task HandleError(long chatId, Exception ex, CancellationToken ct)
         {
-            Console.WriteLine($"Ошибка: {ex.Message}");
+            _logger.LogError(ex, "Ошибка обработки сообщения");
+            var errorText = ex switch
+            {
+                FormatException => "⚠️ Некорректный формат чисел",
+                _ => "⚠️ Ошибка обработки сообщения"
+            };
+
             await _telegramClient.SendMessage(
                 chatId: chatId,
-                text: "Произошла ошибка при обработке сообщения",
+                text: errorText,
                 cancellationToken: ct
                 );
+
+            Console.WriteLine($"Ошибка: {ex.Message}");
         }            
     }
 }

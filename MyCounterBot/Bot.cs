@@ -1,12 +1,4 @@
 ﻿
-using Microsoft.Extensions.Hosting; 
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Exceptions;
-using Telegram.Bot.Polling;
-using Telegram.Bot.Types.Enums;
-using CounterBot.Controllers;
-
 //Требования к боту:
 //1. Бот должен иметь две функции: подсчёт количества символов в тексте и вычисление суммы чисел,
 //которые вы ему отправляете (одним сообщением через пробел).
@@ -15,6 +7,16 @@ using CounterBot.Controllers;
 //3. Выбор одной из двух функций должен происходить на старте в «Главном меню».
 //При старте (через /start) бот должен присылать клиенту ответное сообщение — меню с кнопками, из которого можно выбрать,
 //какое действие пользователь хочет выполнить (по аналогии с тем, как мы выбирали язык в VoiceTexterBot).
+
+using Microsoft.Extensions.Hosting; 
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Exceptions;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types.Enums;
+using CounterBot.Controllers;
+using CounterBot.Services;
+using Microsoft.Extensions.Logging;
 
 namespace BotCounter
 {
@@ -25,17 +27,25 @@ namespace BotCounter
         /// </summary>
         private ITelegramBotClient _telegramClient;
 
+        private readonly IUserStateService _stateService;
+        private readonly ILogger _logger;
+
         //Контроллеры различных видов сообщений
         private InlineKeyboardController _inlineKeyboardController;
         private TextMessageController _textMessageController;
         private DefaultMessageController _defaultMessageController;
 
-        public Bot(ITelegramBotClient telegramClient,
+        public Bot(
+            ITelegramBotClient telegramClient,
+            IUserStateService stateService,
+            ILogger<Bot> logger,
             InlineKeyboardController inlineKeyboardController,
             TextMessageController textMessageController,
             DefaultMessageController defaultMessageController)
         {
             _telegramClient = telegramClient;
+            _stateService = stateService;
+            _logger = logger;
             _inlineKeyboardController = inlineKeyboardController;
             _textMessageController = textMessageController;
             _defaultMessageController = defaultMessageController;
@@ -51,11 +61,10 @@ namespace BotCounter
             _telegramClient.StartReceiving(
                 HandleUpdateAsync,
                 HandleErrorAsync,
-                new ReceiverOptions() { AllowedUpdates = { } }, //Здесь выбираем, какие обновления хотим получать. В данном случае разрешены все)
+                new ReceiverOptions() { AllowedUpdates = Array.Empty<UpdateType>() },
                 cancellationToken: stoppingToken);
 
-            Console.WriteLine("Бот запущен");
-            //return Task.CompletedTask;
+            Console.WriteLine("Бот запущен");           
         }
 
         /// <summary>
@@ -66,32 +75,46 @@ namespace BotCounter
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, 
-            CancellationToken cancellationToken)
+            CancellationToken ct)
         {
             //Обрабатываем нажатия на кнопки из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
-            if (update.Type == UpdateType.CallbackQuery)            
+            try
             {
-                await _inlineKeyboardController.Handle(update.CallbackQuery,
-                    cancellationToken);
-                return;
+                switch (update.Type)
+                {
+                    case UpdateType.CallbackQuery:
+                        await _inlineKeyboardController.Handle(update.CallbackQuery,
+                    ct);
+                        break;
+
+                    case UpdateType.Message:
+                        await HandleMessageAsync(update.Message, ct);
+                        break;
+                }
+            }
+            catch (Exception ex) 
+            {
+                await HandleErrorAsync(botClient, ex, ct);
+            }
+        }            
+            private async Task HandleMessageAsync(Message message, CancellationToken ct)
+            {
+                if (message?.Text == "/start")
+                {
+                    await _inlineKeyboardController.ShowStartMenu(message.Chat.Id, ct);
+                    return;
+                }
+
+                if (message?.Type == MessageType.Text)
+                {
+                    await _textMessageController.Handle(message, ct);
+                }
+                else
+                {
+                await _defaultMessageController.Handle(message, ct);
+                }       
             }
 
-            //Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message            
-            if (update.Type == UpdateType.Message && update.Message.Text != "/start")
-            {
-                switch (update.Message!.Type)
-                {
-                    case MessageType.Text:
-                        await _textMessageController.Handle(update.Message, cancellationToken);                   
-                        return;
-
-                    default:
-                        await _defaultMessageController.Handle(update.Message, cancellationToken);                    
-                        return;
-                }            
-            } 
-        } 
-        
         /// <summary>
         /// Метод обработки ошибок
         /// </summary>
@@ -100,8 +123,10 @@ namespace BotCounter
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, 
-            CancellationToken cancellationToken)
+            CancellationToken ct)
         {
+            _logger.LogError(exception, "Ошибка в боте");
+
             // Задаем сообщение об ошибке в зависимости от того, какая именно ошибка произошла
             var errorMessage = exception switch
             {
@@ -114,9 +139,7 @@ namespace BotCounter
 
             //Задержка перед повторным подключением
             Console.WriteLine("Ожидаем 10 секунд перед повторным подключением.");
-            Thread.Sleep(10000);
-
-            return Task.CompletedTask;
+            return Task.Delay(10_000, ct); // без блокировки потока            
         }
     }
 }

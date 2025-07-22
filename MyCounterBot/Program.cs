@@ -6,6 +6,8 @@ using Telegram.Bot;
 using DotNetEnv;
 using CounterBot.Configuration;
 using CounterBot.Controllers;
+using CounterBot.Services;
+using Microsoft.Extensions.Logging;
 
 namespace BotCounter
 {
@@ -13,81 +15,90 @@ namespace BotCounter
     {
         public static async Task Main()
         {
-            //Загрузка .env из корня проекта
-            string envPath = Path.Combine(Directory.GetCurrentDirectory(), "TelegramBotToken.env");
-
-            //Диагностика(после проверки можно закомментировать)
-            Console.WriteLine($"Ищем .env по пути: {envPath}");
-            Console.WriteLine($"Файл существует: {File.Exists(envPath)}");
-
-            if (!File.Exists(envPath))
+            try
             {
-                //Альтернативный путь для отладки в IDE
-                envPath = Path.Combine(
-                    Directory.GetParent(Directory.GetCurrentDirectory())?.Parent?.Parent?.FullName ?? string.Empty,
-                    "TelegramBotToken.env");
+                Console.OutputEncoding = Encoding.Unicode;
+                LoadEnvironment();
+                ValidateToken();
 
-                Console.WriteLine($"Пробуем альтернативный путь: {envPath}");
-                Console.WriteLine($"Файл существует: {File.Exists(envPath)}");
+                var host = new HostBuilder()
+                    .ConfigureServices(ConfigureServices)
+                    .ConfigureLogging(logging =>
+                    {
+                        logging.AddConsole();
+                        logging.SetMinimumLevel(LogLevel.Information);
+                    })
+                    .UseConsoleLifetime()
+                    .Build();
+
+                Console.WriteLine("Сервис запущен");
+                await host.RunAsync();
+                Console.WriteLine("Сервис остановлен");
             }
-
-            if (!File.Exists(envPath))
+            catch (Exception ex)
             {
-                throw new FileNotFoundException($"Критическая ошибка: .env не найден ни в {Directory.GetCurrentDirectory()}, ни в корне проекта. " +
-                                             "Убедитесь, что файл существует и имеет свойства 'Content/Copy always'");
+                Console.WriteLine($"Критическая ошибка: {ex.Message}");
+                Environment.Exit(1);
             }
-            Env.Load(envPath); //Явно указываем путь
-
-            Console.OutputEncoding = Encoding.Unicode;
-
-            // Объект, отвечающий за постоянный жизненый цикл приложения
-            var host = new HostBuilder()
-                .ConfigureServices((hostContext, services) => ConfigureServices(services))//Задаем конфигурацию
-                .UseConsoleLifetime()//Позволяет поддерживать приложение активным в консоли
-                .Build();//Собираем
-
-            Console.WriteLine("Сервис запущен");
-            //Запускаем сервис
-            await host.RunAsync();
-            Console.WriteLine("Сервис остановлен");
-
-            var downLoadFolder = new AppSettings();
         }
 
-        /// <summary>
-        /// Метод запуска постоянно активного сервиса
-        /// и регистрация бота
-        /// </summary>
-        /// <param name="services"></param>
+            private static void LoadEnvironment()
+        {
+            const string envFile = "TelegramBotToken.env";
+
+            // Поиск .env в разных локациях
+            var locations = new[]
+            {
+                Directory.GetCurrentDirectory(),
+                Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())?
+                    .Parent?.Parent?.FullName ?? string.Empty)
+            };
+
+            foreach (var location in locations)
+            {
+                var path = Path.Combine(location, envFile);
+                if (File.Exists(path))
+                {
+                    Env.Load(path);
+                    return;
+                }
+            }
+
+            throw new FileNotFoundException($"Файл {envFile} не найден. Проверьте пути: {string.Join(", ", locations)}");
+        }
+
+        private static void ValidateToken()
+        {
+            var token = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN");
+            if (string.IsNullOrWhiteSpace(token) || token.Length < 30)
+            {
+                throw new InvalidOperationException(
+                    "Некорректный TELEGRAM_BOT_TOKEN. Проверьте .env файл");
+            }
+        }
+
         static void ConfigureServices(IServiceCollection services)
         {
-            //Подключаем контроллеры сообщений и кнопок
+            // Конфигурация
+            services.AddSingleton(new AppSettings
+            {
+                BotToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN")!
+            });
+
+            // Сервисы
+            services.AddSingleton<IUserStateService, UserStateService>();
+
+            // Контроллеры
             services.AddTransient<DefaultMessageController>();
             services.AddTransient<TextMessageController>();
             services.AddTransient<InlineKeyboardController>();
-            
-            AppSettings appSettings = BuildAppSettings();
-            services.AddSingleton(appSettings);
-            
-            //Регистрируем объект TelegramBotClient с токеном подключения
-            services.AddSingleton<ITelegramBotClient>
-                (provider => new TelegramBotClient(appSettings.BotToken));            
 
-            //Регистрируем постоянно активный сервис бота
+            // Telegram Client
+            services.AddSingleton<ITelegramBotClient>(provider =>
+                new TelegramBotClient(provider.GetRequiredService<AppSettings>().BotToken));
+
+            // Hosted Service
             services.AddHostedService<Bot>();
-
-            //Подключаем хранилище данных в памяти
-            //_______
-
-            //Метод инициализации конфигурации
-            static AppSettings BuildAppSettings()
-            {
-                return new AppSettings()
-                {                    
-                    BotToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN") ?? throw new InvalidOperationException("TELEGRAM_BOT_TOKEN не найден в TelegramBotToken.env"),
-                };
-            }
-          
         }
     }
 }
